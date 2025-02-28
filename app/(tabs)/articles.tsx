@@ -1,103 +1,225 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-
-const ArticleCard = ({ title, category, image, readTime, bookmarked }) => (
-  <TouchableOpacity style={styles.articleCard}>
-    <Image source={{ uri: image }} style={styles.articleImage} />
-    <View style={styles.articleContent}>
-      <View style={styles.categoryContainer}>
-        <Text style={styles.category}>{category}</Text>
-        <TouchableOpacity>
-          <Ionicons
-            name={bookmarked ? "bookmark" : "bookmark-outline"}
-            size={24}
-            color={bookmarked ? "#07e4fe" : "#666"}
-          />
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.title}>{title}</Text>
-      <View style={styles.readTimeContainer}>
-        <Ionicons name="time-outline" size={16} color="#666" />
-        <Text style={styles.readTime}>{readTime} min read</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-);
-
-const CategoryChip = ({ name, active }) => (
-  <TouchableOpacity
-    style={[
-      styles.categoryChip,
-      active && styles.activeCategoryChip
-    ]}
-  >
-    <Text
-      style={[
-        styles.categoryChipText,
-        active && styles.activeCategoryChipText
-      ]}
-    >
-      {name}
-    </Text>
-  </TouchableOpacity>
-);
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Search, BookOpen, Clock, User, ArrowRight } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ArticlesScreen() {
-  const articles = [
-    {
-      title: "Essential Vaccinations for Your Puppy",
-      category: "Health",
-      image: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?q=80&w=300",
-      readTime: 5,
-      bookmarked: true,
-    },
-    {
-      title: "Understanding Cat Behavior",
-      category: "Behavior",
-      image: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=300",
-      readTime: 7,
-      bookmarked: false,
-    },
-    {
-      title: "Nutrition Guide for Senior Dogs",
-      category: "Nutrition",
-      image: "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?q=80&w=300",
-      readTime: 6,
-      bookmarked: false,
-    },
-  ];
-
-  const categories = [
-    { name: "All", active: true },
-    { name: "Health", active: false },
-    { name: "Nutrition", active: false },
-    { name: "Behavior", active: false },
-    { name: "Training", active: false },
-  ];
+  const insets = useSafeAreaInsets();
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Pet Care Articles</Text>
-        <TouchableOpacity>
-          <Ionicons name="search" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoriesContainer}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {categories.map((category, index) => (
-          <CategoryChip key={index} {...category} />
-        ))}
-      </ScrollView>
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <Animated.View entering={FadeInDown.delay(100).duration(700)}>
+            <Text style={styles.headerTitle}>Artículos</Text>
+          </Animated.View>
 
-      <ScrollView style={styles.content}>
-        {articles.map((article, index) => (
-          <ArticleCard key={index} {...article} />
-        ))}
+          <Animated.View entering={FadeInDown.delay(200).duration(700)}>
+            <View style={styles.searchContainer}>
+              <Search size={20} color="#94A3B8" strokeWidth={2.2} />
+              <Text style={styles.searchPlaceholder}>Buscar artículos...</Text>
+            </View>
+          </Animated.View>
+
+          {/* Categories */}
+          <Animated.View entering={FadeInDown.delay(300).duration(700)}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoriesContainer}
+            >
+              <TouchableOpacity style={[styles.categoryButton, styles.categoryButtonActive]}>
+                <Text style={[styles.categoryText, styles.categoryTextActive]}>Todos</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.categoryButton}>
+                <Text style={styles.categoryText}>Salud</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.categoryButton}>
+                <Text style={styles.categoryText}>Nutrición</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.categoryButton}>
+                <Text style={styles.categoryText}>Entrenamiento</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.categoryButton}>
+                <Text style={styles.categoryText}>Cuidados</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </Animated.View>
+        </View>
+
+        {/* Featured Article */}
+        <View style={styles.content}>
+          <Animated.View entering={FadeInDown.delay(400).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Destacado</Text>
+            </View>
+
+            <TouchableOpacity>
+              <View style={styles.featuredCard}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=2069&auto=format&fit=crop' }}
+                  style={styles.featuredImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.8)']}
+                  style={styles.featuredGradient}
+                />
+                <View style={styles.featuredContent}>
+                  <View style={styles.featuredBadge}>
+                    <BookOpen size={12} color="#FFFFFF" strokeWidth={2.2} />
+                    <Text style={styles.featuredBadgeText}>Salud</Text>
+                  </View>
+                  <Text style={styles.featuredTitle}>Cómo mantener a tu perro saludable en verano</Text>
+                  <View style={styles.featuredMeta}>
+                    <View style={styles.featuredMetaItem}>
+                      <Clock size={14} color="#FFFFFF" strokeWidth={2.2} />
+                      <Text style={styles.featuredMetaText}>5 min</Text>
+                    </View>
+                    <View style={styles.featuredMetaItem}>
+                      <User size={14} color="#FFFFFF" strokeWidth={2.2} />
+                      <Text style={styles.featuredMetaText}>Dr. Martínez</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Latest Articles */}
+          <Animated.View entering={FadeInDown.delay(500).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Últimos artículos</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todos</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Article Card 1 */}
+            <TouchableOpacity>
+              <View style={styles.articleCard}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1541599540903-216a46ca1dc0?q=80&w=2071&auto=format&fit=crop' }}
+                  style={styles.articleImage}
+                />
+                <View style={styles.articleContent}>
+                  <View style={styles.articleBadge}>
+                    <Text style={styles.articleBadgeText}>Nutrición</Text>
+                  </View>
+                  <Text style={styles.articleTitle}>La dieta ideal para tu mascota según su edad</Text>
+                  <View style={styles.articleMeta}>
+                    <View style={styles.articleMetaItem}>
+                      <Clock size={14} color="#64748B" strokeWidth={2.2} />
+                      <Text style={styles.articleMetaText}>3 min</Text>
+                    </View>
+                    <View style={styles.articleMetaDot} />
+                    <Text style={styles.articleDate}>Hace 2 días</Text>
+                  </View>
+                  <TouchableOpacity style={styles.readMoreButton}>
+                    <Text style={styles.readMoreText}>Leer más</Text>
+                    <ArrowRight size={16} color="#3B82F6" strokeWidth={2.2} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Article Card 2 */}
+            <TouchableOpacity>
+              <View style={styles.articleCard}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?q=80&w=1986&auto=format&fit=crop' }}
+                  style={styles.articleImage}
+                />
+                <View style={styles.articleContent}>
+                  <View style={[styles.articleBadge, styles.trainingBadge]}>
+                    <Text style={styles.articleBadgeText}>Entrenamiento</Text>
+                  </View>
+                  <Text style={styles.articleTitle}>5 trucos para enseñar a tu perro comandos básicos</Text>
+                  <View style={styles.articleMeta}>
+                    <View style={styles.articleMetaItem}>
+                      <Clock size={14} color="#64748B" strokeWidth={2.2} />
+                      <Text style={styles.articleMetaText}>7 min</Text>
+                    </View>
+                    <View style={styles.articleMetaDot} />
+                    <Text style={styles.articleDate}>Hace 5 días</Text>
+                  </View>
+                  <TouchableOpacity style={styles.readMoreButton}>
+                    <Text style={styles.readMoreText}>Leer más</Text>
+                    <ArrowRight size={16} color="#3B82F6" strokeWidth={2.2} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Popular Topics */}
+          <Animated.View entering={FadeInDown.delay(600).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Temas populares</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todos</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.topicsGrid}>
+              {/* Topic 1 */}
+              <TouchableOpacity style={styles.topicItem}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1591946614720-90a587da4a36?q=80&w=1974&auto=format&fit=crop' }}
+                  style={styles.topicImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.topicGradient}
+                />
+                <Text style={styles.topicTitle}>Salud dental</Text>
+              </TouchableOpacity>
+
+              {/* Topic 2 */}
+              <TouchableOpacity style={styles.topicItem}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1596492784531-6e6eb5ea9993?q=80&w=1974&auto=format&fit=crop' }}
+                  style={styles.topicImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.topicGradient}
+                />
+                <Text style={styles.topicTitle}>Ejercicio</Text>
+              </TouchableOpacity>
+
+              {/* Topic 3 */}
+              <TouchableOpacity style={styles.topicItem}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1581888227599-779811939961?q=80&w=1974&auto=format&fit=crop' }}
+                  style={styles.topicImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.topicGradient}
+                />
+                <Text style={styles.topicTitle}>Vacunas</Text>
+              </TouchableOpacity>
+
+              {/* Topic 4 */}
+              <TouchableOpacity style={styles.topicItem}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1560743641-3914f2c45636?q=80&w=1974&auto=format&fit=crop' }}
+                  style={styles.topicImage}
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.7)']}
+                  style={styles.topicGradient}
+                />
+                <Text style={styles.topicTitle}>Adopción</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
       </ScrollView>
     </View>
   );
@@ -106,91 +228,296 @@ export default function ArticlesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#F8FAFC',
   },
   header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#94A3B8',
+        shadowOffset: {
+          width: 0,
+          height: 10,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
   },
   headerTitle: {
+    fontFamily: 'Poppins-Bold',
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    color: '#1E293B',
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  searchPlaceholder: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: '#94A3B8',
+    marginLeft: 10,
   },
   categoriesContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingRight: 20,
   },
-  categoryChip: {
+  categoryButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F1F5F9',
     marginRight: 10,
   },
-  activeCategoryChip: {
-    backgroundColor: '#07e4fe',
+  categoryButtonActive: {
+    backgroundColor: '#3B82F6',
   },
-  categoryChipText: {
-    color: '#666',
+  categoryText: {
+    fontFamily: 'Poppins-Medium',
     fontSize: 14,
-    fontWeight: '500',
+    color: '#64748B',
   },
-  activeCategoryChipText: {
-    color: '#fff',
+  categoryTextActive: {
+    color: '#FFFFFF',
   },
   content: {
-    flex: 1,
     padding: 20,
   },
-  articleCard: {
-    backgroundColor: '#fff',
-    borderRadius: 15,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 25,
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 18,
+    color: '#1E293B',
+  },
+  seeAllText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#3B82F6',
+  },
+  featuredCard: {
+    height: 220,
+    borderRadius: 20,
     overflow: 'hidden',
     marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#94A3B8',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 5,
+      },
+    }),
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+  },
+  featuredGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '70%',
+  },
+  featuredContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  featuredBadgeText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    color: '#FFFFFF',
+    marginLeft: 5,
+  },
+  featuredTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 18,
+    color: '#FFFFFF',
+    marginBottom: 10,
+  },
+  featuredMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featuredMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  featuredMetaText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    color: '#FFFFFF',
+    marginLeft: 5,
+  },
+  articleCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#94A3B8',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   articleImage: {
     width: '100%',
-    height: 200,
+    height: 150,
   },
   articleContent: {
     padding: 15,
   },
-  categoryContainer: {
+  articleBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  trainingBadge: {
+    backgroundColor: '#F0FDF4',
+  },
+  articleBadgeText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    color: '#3B82F6',
+  },
+  articleTitle: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#1E293B',
+    marginBottom: 10,
+  },
+  articleMeta: {
     flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  articleMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  articleMetaText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
+    color: '#64748B',
+    marginLeft: 5,
+  },
+  articleMetaDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#94A3B8',
+    marginHorizontal: 8,
+  },
+  articleDate: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: '#64748B',
+  },
+  readMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+  },
+  readMoreText: {
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
+    color: '#3B82F6',
+    marginRight: 5,
+  },
+  topicsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  category: {
-    color: '#07e4fe',
-    fontSize: 14,
-    fontWeight: '500',
+  topicItem: {
+    width: '48%',
+    height: 120,
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#94A3B8',
+        shadowOffset: {
+          width: 0,
+          height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+  topicImage: {
+    width: '100%',
+    height: '100%',
   },
-  readTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
+  topicGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '100%',
   },
-  readTime: {
-    color: '#666',
-    fontSize: 14,
+  topicTitle: {
+    position: 'absolute',
+    bottom: 15,
+    left: 15,
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#FFFFFF',
   },
 });

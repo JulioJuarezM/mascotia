@@ -1,0 +1,258 @@
+import { StyleSheet } from 'react-native';
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    splash: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    splashTitle: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        marginTop: 20,
+        color: '#333',
+    },
+    splashSubtitle: {
+        fontSize: 18,
+        color: '#666',
+        marginTop: 8,
+    },
+    splashIcon: {
+        width: 80,
+        height: 80,
+        resizeMode: 'contain'
+    },
+    header: {
+        borderTopWidth: 10,
+        borderTopColor: '#eee',
+        padding: 20,
+        backgroundColor: '#fff',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingVertical: 20,
+        marginBottom: 20,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    name: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#07e4fe',
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginTop: 20,
+        marginBottom: 10,
+        paddingHorizontal: 20,
+    },
+    petCard: {
+        backgroundColor: '#fff',
+        marginHorizontal: 20,
+        marginVertical: 8,
+        borderRadius: 15,
+        flexDirection: 'row',
+        overflow: 'hidden',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    petImage: {
+        width: 100,
+        height: 100,
+    },
+    petInfo: {
+        padding: 15,
+        flex: 1,
+    },
+    petName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    petSpecies: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    checkupText: {
+        fontSize: 12,
+        color: '#07e4fe',
+        marginTop: 8,
+    },
+    adviceCard: {
+        backgroundColor: '#fff',
+        marginHorizontal: 20,
+        marginVertical: 8,
+        padding: 15,
+        borderRadius: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    adviceContent: {
+        marginLeft: 15,
+        flex: 1,
+    },
+    adviceTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    adviceDescription: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 4,
+    },
+    mainContainer: {
+        flex: 1,
+        backgroundColor: '#07e4fe',// red
+    },
+    floatingChatButton: {
+        position: 'absolute',
+        right: 20,
+        bottom: 20,
+        backgroundColor: '#07e4fe',
+        borderRadius: 30,
+        padding: 15,
+        flexDirection: 'row',
+        alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+    },
+    chatButtonText: {
+        color: '#fff',
+        marginLeft: 5,
+        fontWeight: 'bold',
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContent: {
+        flex: 1,
+        backgroundColor: '#fff',
+        marginTop: 50,
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    modalHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    aiAvatar: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#07e4fe',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 10,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    modalSubtitle: {
+        fontSize: 14,
+        color: '#666',
+    },
+    closeButton: {
+        padding: 5,
+    },
+    chatContainer: {
+        flex: 1,
+        padding: 15,
+    },
+    messageContainer: {
+        flex: 1,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        padding: 10,
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        backgroundColor: '#fff',
+    },
+    input: {
+        flex: 1,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 20,
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        marginRight: 10,
+        fontSize: 16,
+    },
+    sendButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#07e4fe',
+    },
+    messageWrapper: {
+        marginVertical: 5,
+        maxWidth: '80%',
+        padding: 10,
+        borderRadius: 15,
+    },
+    userMessage: {
+        alignSelf: 'flex-end',
+        backgroundColor: '#07e4fe',
+        marginLeft: 'auto',
+    },
+    aiMessage: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#f0f0f0',
+        marginRight: 'auto',
+    },
+    messageText: {
+        color: '#333',
+        fontSize: 16,
+    },
+    timestamp: {
+        fontSize: 10,
+        color: '#666',
+        marginTop: 5,
+        textAlign: 'right',
+    },
+
+    headerGradient: {
+        padding: 20,
+        borderRadius: 10,
+        marginHorizontal: 5,
+    },
+});
+
+export default styles; 

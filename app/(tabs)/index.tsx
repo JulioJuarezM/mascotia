@@ -1,349 +1,377 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, TextInput } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { Bell, MessageCircle, Heart, Calendar, Clock, ArrowRight } from 'lucide-react-native';
+import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
+import styles from '../styles/index.styles';
+import { useAuth } from '../context/AuthContext';
 import { useEffect, useState } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import { petService, Pet as ServicePet } from '../services/petService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import AIChatModal from '../components/AIChatModal';
+import { AppointmentService } from '../services/appointmentService.service';
+import AddPetModal from '../components/AddPetModal';
 
-const PetCard = ({ name, species, image, nextCheckup }: { name: string, species: string, image: string, nextCheckup: string }) => (
-  <View style={styles.petCard}>
-    <Image
-      source={{ uri: image }}
-      style={styles.petImage}
-    />
-    <View style={styles.petInfo}>
-      <Text style={styles.petName}>{name}</Text>
-      <Text style={styles.petSpecies}>{species}</Text>
-      <Text style={styles.checkupText}>Next checkup: {nextCheckup}</Text>
-    </View>
-  </View>
-);
 
-const AdviceCard = ({ title, description, icon }: { title: string, description: string, icon: string }) => (
-  <View style={styles.adviceCard}>
-    <Ionicons name={icon as any} size={24} color="#07e4fe" />
-    <View style={styles.adviceContent}>
-      <Text style={styles.adviceTitle}>{title}</Text>
-      <Text style={styles.adviceDescription}>{description}</Text>
-    </View>
-  </View>
-);
+// Definimos un tipo local que coincida con lo que necesitamos mostrar en la UI
+type DisplayPet = {
+  id: number;
+  name: string;
+  breed: string;
+  imageUrl: string;
+  age?: number;
+  gender?: string;
+  type?: string;
+  color?: string;
+};
+
+// Actualizar el tipo Appointment para incluir las nuevas propiedades
+type Appointment = {
+  id: number;
+  petId: number;
+  petName: string;
+  petImage: string;
+  date: string;
+  time: string;
+  providerName: string;
+  appointmentType: string;
+  address: string;
+};
 
 export default function HomeScreen() {
-  const [pets, setPets] = useState([]);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [message, setMessage] = useState('');
+  const insets = useSafeAreaInsets();
+  const { isAuthenticated, user } = useAuth();
+  const [name, setName] = useState('');
+  const [pets, setPets] = useState<DisplayPet[]>([]);
+  const [isAIChatVisible, setIsAIChatVisible] = useState(false);
+  const [nextAppointment, setNextAppointment] = useState<Appointment | null>(null);
+  const [isAddPetModalVisible, setIsAddPetModalVisible] = useState(false);
 
-  const fetchPets = async () => {
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  useEffect(() => {
+    setName(user?.name || '');
+    loadPets();
+    loadNextAppointment();
+  }, [user]);
+
+  const loadPets = async () => {
     try {
-      const response = await fetch('http://localhost:89/api/v1/mascotia/pets/user/1');
-      const data = await response.json();
-      const transformedPets = data.map((pet: any) => ({
-        name: pet.name,
-        species: pet.breed || 'No especificado',
-        image: pet.pet_image,
-        nextCheckup: 'Próximamente',
+      console.log('Loading pets for user:', user?.id);
+      const userPets = await petService.getUserPets(user?.id || 0);
+      console.log('Raw pets response:', userPets);
+
+      // Verificar si userPets es un array
+      if (!Array.isArray(userPets)) {
+        console.log('userPets no es un array:', userPets);
+        setPets([]);
+        return;
+      }
+
+      // Transformamos los datos al nuevo formato con validación
+      const formattedPets: DisplayPet[] = userPets.map(pet => ({
+        id: pet?.id || 0,
+        name: pet?.name || 'Sin nombre',
+        breed: pet?.details?.[0]?.breed || 'Desconocida',
+        imageUrl: pet?.image || '',
+        age: pet?.details?.[0]?.age || 0,
+        gender: pet?.details?.[0]?.gender || 'Desconocido',
+        type: pet?.details?.[0]?.species || 'Desconocido',
+        color: pet?.details?.[0]?.color || 'Desconocido'
       }));
-      setPets(transformedPets);
+
+      console.log('Formatted pets:', formattedPets);
+      setPets(formattedPets);
+      await AsyncStorage.setItem('pets', JSON.stringify(formattedPets));
     } catch (error) {
-      console.error('Error fetching pets:', error);
+      console.error('Error loading pets:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack available');
+      setPets([]); // Establecer un array vacío en caso de error
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchPets();
-    }, [])
-  );
+  const loadNextAppointment = async () => {
+    try {
+      if (!user?.id) return;
+
+      const appointmentService = new AppointmentService();
+      const appointments = await appointmentService.getNextAppointment(user.id);
+
+      if (appointments && appointments.length > 0) {
+        const appointment = appointments[0];
+        const appointmentDate = new Date(appointment.appointment_date);
+        const petsArray = await AsyncStorage.getItem('pets');
+        const pets = JSON.parse(petsArray || '[]');
+        const pet = pets.find((pet: any) => pet.id === appointment.pet_id);
+
+        if (pet) {
+          setNextAppointment({
+            id: appointment.id,
+            petId: appointment.pet_id,
+            petName: pet.name,
+            petImage: pet.imageUrl,
+            date: appointmentDate.toLocaleDateString('es-ES'),
+            time: appointmentDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+            providerName: appointment.appointment_providers.name,
+            appointmentType: appointment.appointment_types.name,
+            address: appointment.appointment_providers.address
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error cargando la próxima cita:', error);
+    }
+  };
 
   return (
-    <View style={styles.mainContainer}>
-      <ScrollView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Bienvenido</Text>
+    <View style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
+        {/* Header */}
+        <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+          <Animated.View entering={FadeInDown.delay(100).duration(700)}>
+            <View style={styles.welcomeContainer}>
+              <View>
+                <Text style={styles.welcomeText}>Hola,</Text>
+                <Text style={styles.nameText}>{name.split(' ')[0]}</Text>
+              </View>
+              <View style={styles.headerIcons}>
+                <TouchableOpacity style={styles.iconButton}>
+                  <Bell size={22} color="#1F2937" strokeWidth={2.2} />
+                  <View style={styles.notificationBadge} />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.iconButton}>
+                  <MessageCircle size={22} color="#1F2937" strokeWidth={2.2} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Pet Card */}
+          {nextAppointment ? (
+            <Animated.View
+              style={styles.petCardContainer}
+              entering={FadeInDown.delay(200).duration(700)}
+            >
+              <LinearGradient
+                colors={['#3B82F6', '#60A5FA']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.petCard}
+              >
+                <View style={styles.petCardContent}>
+                  <View>
+                    <Text style={styles.petCardTitle}>Próxima cita</Text>
+                    <Text style={styles.petName}>{nextAppointment.petName}</Text>
+                    <View style={styles.appointmentInfo}>
+                      <View style={styles.appointmentDetail}>
+                        <Calendar size={16} color="#FFFFFF" strokeWidth={2.2} />
+                        <Text style={styles.appointmentText}>{nextAppointment.date}</Text>
+                      </View>
+                      <View style={styles.appointmentDetail}>
+                        <Clock size={16} color="#FFFFFF" strokeWidth={2.2} />
+                        <Text style={styles.appointmentText}>{nextAppointment.time}</Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity style={styles.detailsButton}>
+                      <Text style={styles.detailsButtonText}>Ver detalles</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Image
+                    source={{ uri: nextAppointment.petImage }}
+                    style={styles.petImage}
+                  />
+                </View>
+              </LinearGradient>
+            </Animated.View>
+          ) : null}
         </View>
 
-        <Text style={styles.sectionTitle}>Tus Mascotas</Text>
-        {pets.map((pet: any, index: number) => (
-          <PetCard key={index} {...pet} />
-        ))}
+        {/* Main Content */}
+        <View style={styles.content}>
+          {/* My Pets Section */}
+          <Animated.View entering={FadeInDown.delay(300).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Mis Mascotas</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todas</Text>
+              </TouchableOpacity>
+            </View>
 
-        <Text style={styles.sectionTitle}>Consejos de Cuidado</Text>
-        {pets.map((pet: any, index: number) => (
-          <AdviceCard
-            key={index}
-            title={`Cuidado de ${pet.name}`}
-            description={`Recuerda dar atención especial a ${pet.name} hoy`}
-            icon="heart"
-          />
-        ))}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.petsScrollContainer}
+            >
+              {pets.map((pet) => (
+                <TouchableOpacity key={pet.id} style={styles.petItem}>
+                  <View style={styles.petImageContainer}>
+                    <Image
+                      source={{ uri: pet.imageUrl }}
+                      style={styles.petItemImage}
+                    />
+                  </View>
+                  <Text style={styles.petItemName}>{pet.name}</Text>
+                  <Text style={styles.petItemBreed}>{pet.breed}</Text>
+                  <Text style={styles.petItemDetails}>
+                    {pet.age} años • {pet.gender}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+
+              {/* Add Pet Button */}
+              <TouchableOpacity
+                style={styles.addPetButton}
+                onPress={() => setIsAddPetModalVisible(true)}
+              >
+                <View style={styles.addPetIconContainer}>
+                  <Text style={styles.addPetIcon}>+</Text>
+                </View>
+                <Text style={styles.addPetText}>Añadir</Text>
+                <Text style={styles.addPetSubtext}>mascota</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </Animated.View>
+
+          {/* Care Tips Section */}
+          <Animated.View entering={FadeInDown.delay(400).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Consejos de Cuidado</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todos</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tip Card */}
+            <TouchableOpacity>
+              <View style={styles.tipCard}>
+                <View style={styles.tipCardContent}>
+                  <View style={styles.tipIconContainer}>
+                    <Heart size={24} color="#F43F5E" strokeWidth={2.2} />
+                  </View>
+                  <View style={styles.tipTextContainer}>
+                    <Text style={styles.tipTitle}>Cuidado de Sira</Text>
+                    <Text style={styles.tipDescription}>
+                      Recuerda dar atención especial a Sira hoy
+                    </Text>
+                  </View>
+                  <View style={styles.tipArrowContainer}>
+                    <ArrowRight size={20} color="#94A3B8" strokeWidth={2.2} />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+
+            {/* Tip Card 2 */}
+            <TouchableOpacity>
+              <View style={styles.tipCard}>
+                <View style={styles.tipCardContent}>
+                  <View style={[styles.tipIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                    <Calendar size={24} color="#3B82F6" strokeWidth={2.2} />
+                  </View>
+                  <View style={styles.tipTextContainer}>
+                    <Text style={styles.tipTitle}>Vacunación</Text>
+                    <Text style={styles.tipDescription}>
+                      Próxima vacuna de Sira en 2 semanas
+                    </Text>
+                  </View>
+                  <View style={styles.tipArrowContainer}>
+                    <ArrowRight size={20} color="#94A3B8" strokeWidth={2.2} />
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Services Section */}
+          <Animated.View entering={FadeInDown.delay(500).duration(700)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Servicios Populares</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllText}>Ver todos</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.servicesGrid}>
+              {/* Service 1 */}
+              <TouchableOpacity style={styles.serviceItem}>
+                <View style={[styles.serviceIconContainer, { backgroundColor: '#EFF6FF' }]}>
+                  <Image
+                    source={{ uri: 'https://img.icons8.com/fluency/96/veterinarian.png' }}
+                    style={styles.serviceIcon}
+                  />
+                </View>
+                <Text style={styles.serviceTitle}>Veterinario</Text>
+              </TouchableOpacity>
+
+              {/* Service 2 */}
+              <TouchableOpacity style={styles.serviceItem}>
+                <View style={[styles.serviceIconContainer, { backgroundColor: '#FEF2F2' }]}>
+                  <Image
+                    source={{ uri: 'https://img.icons8.com/fluency/96/dog-bowl.png' }}
+                    style={styles.serviceIcon}
+                  />
+                </View>
+                <Text style={styles.serviceTitle}>Alimentación</Text>
+              </TouchableOpacity>
+
+              {/* Service 3 */}
+              <TouchableOpacity style={styles.serviceItem}>
+                <View style={[styles.serviceIconContainer, { backgroundColor: '#F0FDF4' }]}>
+                  <Image
+                    source={{ uri: 'https://img.icons8.com/fluency/96/dog-training.png' }}
+                    style={styles.serviceIcon}
+                  />
+                </View>
+                <Text style={styles.serviceTitle}>Entrenamiento</Text>
+              </TouchableOpacity>
+
+              {/* Service 4 */}
+              <TouchableOpacity style={styles.serviceItem}>
+                <View style={[styles.serviceIconContainer, { backgroundColor: '#FFF7ED' }]}>
+                  <Image
+                    source={{ uri: 'https://img.icons8.com/fluency/96/dog-grooming.png' }}
+                    style={styles.serviceIcon}
+                  />
+                </View>
+                <Text style={styles.serviceTitle}>Peluquería</Text>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </View>
       </ScrollView>
 
-      <TouchableOpacity
-        style={styles.floatingChatButton}
-        onPress={() => setModalVisible(true)}
+      {/* AI Assistant Button */}
+      <Animated.View
+        style={[styles.aiButtonContainer, { bottom: 80 + insets.bottom }]}
+        entering={FadeInRight.delay(600).duration(700)}
       >
-        <Ionicons name="chatbubbles" size={24} color="#fff" />
-        <Text style={styles.chatButtonText}>AI</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.aiButton}
+          onPress={() => setIsAIChatVisible(true)}
+        >
+          <BlurView intensity={90} tint="light" style={styles.aiButtonBlur}>
+            <MessageCircle size={24} color="#FFFFFF" strokeWidth={2.2} />
+            <Text style={styles.aiButtonText}>AI</Text>
+          </BlurView>
+        </TouchableOpacity>
+      </Animated.View>
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalHeaderLeft}>
-                <View style={styles.aiAvatar}>
-                  <Ionicons name="logo-github" size={24} color="#fff" />
-                </View>
-                <View>
-                  <Text style={styles.modalTitle}>Asistente AI</Text>
-                  <Text style={styles.modalSubtitle}>En línea</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
+      <AIChatModal
+        isVisible={isAIChatVisible}
+        onClose={() => setIsAIChatVisible(false)}
+      />
 
-            <ScrollView style={styles.chatContainer}>
-              <View style={styles.messageContainer}>
-                <View style={styles.aiMessage}>
-                  <Text style={styles.messageText}>¡Hola! ¿En qué puedo ayudarte hoy?</Text>
-                </View>
-              </View>
-            </ScrollView>
-
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Escribe un mensaje..."
-                value={message}
-                onChangeText={setMessage}
-                multiline
-              />
-              <TouchableOpacity style={styles.sendButton}>
-                <Ionicons name="send" size={24} color="#07e4fe" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <AddPetModal
+        isVisible={isAddPetModalVisible}
+        onClose={() => setIsAddPetModalVisible(false)}
+        onAddPet={loadPets}
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    padding: 20,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    paddingHorizontal: 20,
-  },
-  petCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginVertical: 8,
-    borderRadius: 15,
-    flexDirection: 'row',
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  petImage: {
-    width: 100,
-    height: 100,
-  },
-  petInfo: {
-    padding: 15,
-    flex: 1,
-  },
-  petName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  petSpecies: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  checkupText: {
-    fontSize: 12,
-    color: '#07e4fe',
-    marginTop: 8,
-  },
-  adviceCard: {
-    backgroundColor: '#fff',
-    marginHorizontal: 20,
-    marginVertical: 8,
-    padding: 15,
-    borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  adviceContent: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  adviceTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  adviceDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  mainContainer: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  floatingChatButton: {
-    backgroundColor: '#07e4fe',
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderRadius: 25,
-    position: 'absolute',
-    bottom: 20,
-    alignSelf: 'flex-end',
-    gap: 8,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-  },
-  chatButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-    height: '90%',
-    paddingTop: 20,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  modalHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  aiAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#07e4fe',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: '#07e4fe',
-  },
-  closeButton: {
-    padding: 5,
-  },
-  chatContainer: {
-    flex: 1,
-    padding: 15,
-  },
-  messageContainer: {
-    marginBottom: 15,
-  },
-  aiMessage: {
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    borderRadius: 20,
-    borderTopLeftRadius: 5,
-    maxWidth: '80%',
-    alignSelf: 'flex-start',
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#333',
-    lineHeight: 22,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    fontSize: 16,
-    maxHeight: 100,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

@@ -4,7 +4,7 @@
     "slug": "mascotia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "mascotia",
     "userInterfaceStyle": "automatic",
     "splash": {
@@ -15,8 +15,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.mascotia",
-      "buildNumber": "1"
+      "bundleIdentifier": "com.mascotia.app",
+      "buildNumber": "1.0.0",
+      "icon": "./assets/images/icon.png",
+      "icons": {
+        "app-store": "./assets/images/icon.png",
+        "iphone": "./assets/images/icon.png",
+        "ipad": "./assets/icons/ios/167x167.png",
+        "notification": "./assets/icons/ios/60x60.png",
+        "settings": "./assets/icons/ios/87x87.png"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -31,6 +39,14 @@
     },
     "android": {
       "package": "com.anonymous.mascotia"
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "4fe048f0-cb94-4beb-9d4f-5c030fe6f104"
+      }
     }
   }
 }
