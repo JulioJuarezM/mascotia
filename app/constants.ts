@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
 } as const;
 
 export const GlobalConfig = {
-    BASE_URL: process.env.API_BASE_URL || 'http://localhost:89/api/v1',
+    BASE_URL: process.env.API_BASE_URL || 'http://34.31.240.21:31700/api/v1',
 };
 
 // Agregar export default con todas las constantes

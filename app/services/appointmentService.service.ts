@@ -24,7 +24,7 @@ export interface Appointment {
 export class AppointmentService {
     async getUserAppointments(petId: number): Promise<{ appointments: any[], pets: DisplayPet[] }> {
         try {
-            const response = await fetch(`http://localhost:89/api/v1/mascotia/appointments/pet/${petId}`);
+            const response = await fetch(`hhttp://34.31.240.21:31700/api/v1/mascotia/appointments/pet/${petId}`);
             const appointmentsData = await response.json();
 
             // Obtener las mascotas del AsyncStorage
@@ -43,7 +43,7 @@ export class AppointmentService {
 
     async getAppointmentsAndPets(petId: number): Promise<{ appointments: any[], pets: DisplayPet[] }> {
         try {
-            const response = await fetch(`http://localhost:89/api/v1/mascotia/appointments/pet/${petId}`);
+            const response = await fetch(`http://34.31.240.21:31700/api/v1/mascotia/appointments/pet/${petId}`);
             const appointmentsData = await response.json();
 
             // Obtener las mascotas del AsyncStorage
@@ -61,7 +61,7 @@ export class AppointmentService {
     }
     async getNextAppointment(petId: number): Promise<any> {
         try {
-            const response = await fetch(`http://localhost:89/api/v1/mascotia/appointments/pet/${petId}`);
+            const response = await fetch(`http://34.31.240.21:31700/api/v1/mascotia/appointments/pet/${petId}`);
             console.log('response', response);
             const appointmentData = await response.json();
             return appointmentData;

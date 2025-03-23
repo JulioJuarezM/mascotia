@@ -24,6 +24,17 @@
         "ipad": "./assets/icons/ios/167x167.png",
         "notification": "./assets/icons/ios/60x60.png",
         "settings": "./assets/icons/ios/87x87.png"
+      },
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "34.31.240.21": {
+              "NSExceptionAllowsInsecureHTTPLoads": true,
+              "NSIncludesSubdomains": true
+            }
+          }
+        }
       }
     },
     "web": {
@@ -38,7 +49,10 @@
       "typedRoutes": true
     },
     "android": {
-      "package": "com.anonymous.mascotia"
+      "package": "com.anonymous.mascotia",
+      "networkSecurityConfig": {
+        "cleartextTrafficPermitted": true
+      }
     },
     "extra": {
       "router": {

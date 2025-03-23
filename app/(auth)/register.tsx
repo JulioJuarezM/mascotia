@@ -60,7 +60,7 @@ export default function RegisterScreen() {
                 type: imageType,
             } as any);
 
-            const response = await fetch('http://localhost:89/api/v1/mascotia/signup', {
+            const response = await fetch('http://34.31.240.21:31700/api/v1/mascotia/signup', {
                 method: 'POST',
                 headers: {
                     'accept': '*/*',

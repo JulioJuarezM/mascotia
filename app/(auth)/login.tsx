@@ -14,16 +14,29 @@ export default function LoginScreen() {
     const handleLogin = async () => {
         try {
             console.log('Iniciando proceso de login...');
-            const response = await fetch('http://localhost:89/api/v1/mascotia/login', {
+
+            const url = `http://34.31.240.21:31700/api/v1/mascotia/login`;
+            console.log('URL:', url);
+
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'accept': '*/*',
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    email,
-                    password,
+                    email: email,
+                    password: password
                 }),
+            }).catch(error => {
+                console.error('Error en fetch:', error);
+                throw new Error(`Error de conexión: ${error.message}`);
             });
+
+            if (!response) {
+                throw new Error('No se recibió respuesta del servidor');
+            }
+
             const data = await response.json();
             console.log('Respuesta completa:', data);
 
@@ -59,7 +72,9 @@ export default function LoginScreen() {
             }
         } catch (error) {
             console.error('Error durante el login:', error);
-            alert('Error al intentar iniciar sesión');
+            alert(Platform.OS === 'ios' && __DEV__
+                ? 'Error de conexión en el simulador de iOS. Intenta usar un dispositivo físico o configura el proxy.'
+                : 'Error al intentar iniciar sesión');
         }
     };
 

@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GlobalConfig } from '../constants';
 import { API_ENDPOINTS } from '../constants';
+import { API_URL } from '@env';
 
 export interface PetDetail {
     id: number;
@@ -31,6 +32,8 @@ export interface NewPet {
     species: string;
     image: string;
     weight: string;
+    color: string;
+    gender: string;
 }
 
 export const petService = {
@@ -75,7 +78,8 @@ export const petService = {
             formData.append('breed', newPet.breed);
             formData.append('userId', userId.toString());
             formData.append('type', newPet.species);
-            formData.append('color', 'string'); // Valor por defecto
+            formData.append('color', newPet.color);
+            formData.append('gender', newPet.gender);
             formData.append('age', newPet.age);
 
             // Preparar y agregar la imagen si existe
@@ -92,7 +96,8 @@ export const petService = {
                 } as any);
             }
 
-            const response = await fetch(`http://localhost:89/api/v1/mascotia/pets/create`, {
+            console.log('API_URL:', API_URL);
+            const response = await fetch(`${API_URL}/api/v1/mascotia/pets/create`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -103,6 +108,7 @@ export const petService = {
             });
 
             if (!response.ok) {
+                console.log('Error al registrar la mascota:', response);
                 throw new Error('Error al registrar la mascota');
             }
         } catch (error) {

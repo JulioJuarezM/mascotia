@@ -43,7 +43,7 @@ export default function ServicesScreen() {
 
   const fetchAppointments = async () => {
     try {
-      const response = await fetch('http://localhost:89/api/v1/mascotia/appointments/pet/1');
+      const response = await fetch('http://34.31.240.21:31700/api/v1/mascotia/appointments/pet/1');
       const appointmentsData = await response.json();
 
       // Obtener las mascotas del AsyncStorage

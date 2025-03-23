@@ -54,8 +54,10 @@ export default function AIChatModal({ isVisible, onClose }: AIChatModalProps) {
         setIsLoading(true);
 
         try {
+            const url = `${process.env.API_URL}/api/v1/mascotia/ia/chat`;
+            console.log('URL:', url);
             const sessionId = user?.email + '1' || user?.id || 'anonymous';
-            const response = await fetch('http://localhost:89/api/v1/mascotia/ia/chat', {
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

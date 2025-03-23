@@ -8,6 +8,7 @@ import {
     StyleSheet,
     Image,
     Animated,
+    ScrollView,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { X, Camera, ArrowRight, Loader } from 'lucide-react-native';
@@ -15,6 +16,9 @@ import * as ImagePicker from 'expo-image-picker';
 import { petService } from '../services/petService';
 import { useAuth } from '../context/AuthContext';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { API_URL } from '@env';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MotiView } from 'moti';
 
 interface AddPetModalProps {
     isVisible: boolean;
@@ -47,6 +51,10 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
         age: '',
         weight: '',
         image: '',
+        color: '',
+        gender: '',
+        attributes: '',
+        size: '',
     });
 
     const fadeOut = () => {
@@ -74,7 +82,6 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
     };
 
     const pickImage = async () => {
-        console.log('pickImage');
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -101,8 +108,9 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
                         }
                     );
 
+                    const url = `${API_URL}/api/v1/mascotia/ia/image`;
                     const base64Image = manipResult.base64;
-                    const response = await fetch('http://localhost:89/api/v1/mascotia/ia/image', {
+                    const response = await fetch(url, {
                         method: 'POST',
                         headers: {
                             'accept': '*/*',
@@ -118,13 +126,21 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
                     console.log('Respuesta del endpoint de IA:', result);
 
                     if (result.success && result.data) {
+                        const petDetails = result.data.pet_details;
                         setPetData(prev => ({
                             ...prev,
-                            name: result.data.name || '',
-                            species: result.data.pet_details?.type || 'No detectado',
-                            breed: result.data.pet_details?.breed || 'No detectado',
-                            age: result.data.pet_details?.age?.toString() || '',
+                            species: petDetails?.type || 'No detectado',
+                            breed: petDetails?.breed || 'No detectado',
+                            color: petDetails?.color || 'No detectado',
+                            gender: petDetails?.gender || 'Desconocido',
+                            size: petDetails?.size || 'No detectado',
+                            attributes: petDetails?.attributes || 'Sin características detectadas'
                         }));
+                    }
+
+                    if (result.statusCode === 500) {
+                        console.log('Error:', result.message);
+                        alert('Error al analizar la imagen. Por favor, intenta nuevamente.');
                     }
 
                     nextStep();
@@ -154,6 +170,10 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
                 age: '',
                 weight: '',
                 image: '',
+                color: '',
+                gender: '',
+                attributes: '',
+                size: '',
             });
         } catch (error) {
             console.error('Error al crear mascota:', error);
@@ -180,18 +200,79 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
             case 2:
                 return (
                     <Animated.View style={[styles.stepContainer, { opacity: fadeAnim }]}>
-                        <View style={styles.imagePreviewContainer}>
-                            <Image source={{ uri: petData.image }} style={styles.previewImage} />
-                        </View>
-                        <View style={styles.detectedInfoContainer}>
-                            <Text style={styles.detectedInfoTitle}>Hemos detectado:</Text>
-                            <Text style={styles.detectedInfoText}>Especie: {petData.species}</Text>
-                            <Text style={styles.detectedInfoText}>Raza: {petData.breed}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.nextButton} onPress={nextStep}>
-                            <Text style={styles.nextButtonText}>Continuar</Text>
-                            <ArrowRight size={20} color="#FFFFFF" />
-                        </TouchableOpacity>
+                        <ScrollView
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={styles.scrollContent}
+                        >
+                            <MotiView
+                                from={{ scale: 0.95, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                transition={{ type: 'timing', duration: 500 }}
+                                style={styles.imagePreviewWrapper}
+                            >
+                                <View style={styles.imagePreviewContainer}>
+                                    <Image
+                                        source={{ uri: petData.image }}
+                                        style={styles.previewImage}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            </MotiView>
+
+                            <MotiView
+                                from={{ translateY: 20, opacity: 0 }}
+                                animate={{ translateY: 0, opacity: 1 }}
+                                transition={{ type: 'timing', duration: 500, delay: 200 }}
+                                style={styles.detectedInfoContainer}
+                            >
+                                <Text style={styles.detectedInfoTitle}>Hemos detectado:</Text>
+                                <View style={styles.infoGrid}>
+                                    <View style={styles.infoRow}>
+                                        <View style={styles.infoColumn}>
+                                            <Text style={styles.infoLabel}>ESPECIE</Text>
+                                            <Text style={styles.infoValue}>{petData.species}</Text>
+                                        </View>
+                                        <View style={styles.infoColumn}>
+                                            <Text style={styles.infoLabel}>RAZA</Text>
+                                            <Text style={styles.infoValue}>{petData.breed}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.infoRow}>
+                                        <View style={styles.infoColumn}>
+                                            <Text style={styles.infoLabel}>COLOR</Text>
+                                            <Text style={styles.infoValue}>{petData.color}</Text>
+                                        </View>
+                                        <View style={styles.infoColumn}>
+                                            <Text style={styles.infoLabel}>TAMAÑO</Text>
+                                            <Text style={styles.infoValue}>{petData.size}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={styles.infoRow}>
+                                        <View style={styles.infoColumn}>
+                                            <Text style={styles.infoLabel}>GÉNERO</Text>
+                                            <Text style={styles.infoValue}>{petData.gender}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <View style={styles.factsContainer}>
+                                    <Text style={styles.factsTitle}>Facts:</Text>
+                                    <Text style={styles.factsText}>{petData.attributes}</Text>
+                                </View>
+                            </MotiView>
+                        </ScrollView>
+
+                        <MotiView
+                            from={{ translateY: 20, opacity: 0 }}
+                            animate={{ translateY: 0, opacity: 1 }}
+                            transition={{ type: 'timing', duration: 500, delay: 400 }}
+                            style={styles.buttonContainer}
+                        >
+                            <TouchableOpacity style={styles.nextButton} onPress={nextStep}>
+                                <Text style={styles.nextButtonText}>Continuar</Text>
+                                <ArrowRight size={20} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        </MotiView>
                     </Animated.View>
                 );
 
@@ -216,6 +297,24 @@ const AddPetModal = ({ isVisible, onClose, onAddPet }: AddPetModalProps) => {
                                 onChangeText={(text) => setPetData({ ...petData, age: text })}
                                 placeholder="Edad en años"
                                 keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Color</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={petData.color}
+                                onChangeText={(text) => setPetData({ ...petData, color: text })}
+                                placeholder="Color de la mascota"
+                            />
+                        </View>
+                        <View style={styles.inputContainer}>
+                            <Text style={styles.label}>Género</Text>
+                            <TextInput
+                                style={styles.input}
+                                value={petData.gender}
+                                onChangeText={(text) => setPetData({ ...petData, gender: text })}
+                                placeholder="Género (male/female)"
                             />
                         </View>
                         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
@@ -267,7 +366,7 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 25,
         borderTopRightRadius: 25,
         padding: 20,
-        height: '80%',
+        height: '90%',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -293,9 +392,7 @@ const styles = StyleSheet.create({
     },
     stepContainer: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
+        width: '100%',
     },
     stepTitle: {
         fontSize: 24,
@@ -325,34 +422,95 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         marginTop: 12,
     },
+    scrollContent: {
+        paddingTop: 10,
+        paddingHorizontal: 16,
+        paddingBottom: 80,
+    },
+    imagePreviewWrapper: {
+        width: '100%',
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: 16,
+    },
     imagePreviewContainer: {
         width: '100%',
-        aspectRatio: 4 / 3,
-        borderRadius: 12,
+        aspectRatio: 16 / 9,
+        borderRadius: 16,
         overflow: 'hidden',
-        marginBottom: 24,
     },
     previewImage: {
         width: '100%',
         height: '100%',
     },
     detectedInfoContainer: {
-        width: '100%',
-        backgroundColor: '#F3F4F6',
+        backgroundColor: '#FFFFFF',
         padding: 16,
-        borderRadius: 12,
-        marginBottom: 24,
+        borderRadius: 16,
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
     },
     detectedInfoTitle: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 16,
+    },
+    infoGrid: {
+        width: '100%',
+    },
+    infoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    infoColumn: {
+        flex: 1,
+        marginHorizontal: 4,
+    },
+    infoLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#6B7280',
+        marginBottom: 4,
+        letterSpacing: 0.5,
+    },
+    infoValue: {
+        fontSize: 16,
+        fontWeight: '500',
+        color: '#1F2937',
+    },
+    factsContainer: {
+        marginTop: 16,
+        padding: 16,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 12,
+    },
+    factsTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: '#1F2937',
-        marginBottom: 12,
-    },
-    detectedInfoText: {
-        fontSize: 16,
-        color: '#4B5563',
         marginBottom: 8,
+    },
+    factsText: {
+        fontSize: 15,
+        lineHeight: 22,
+        color: '#4B5563',
+        fontStyle: 'italic',
+    },
+    buttonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 16,
+        backgroundColor: '#FFFFFF',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E7EB',
     },
     nextButton: {
         backgroundColor: '#3B82F6',
@@ -361,7 +519,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 16,
         borderRadius: 12,
-        width: '100%',
+        elevation: 2,
     },
     nextButtonText: {
         color: '#FFFFFF',
